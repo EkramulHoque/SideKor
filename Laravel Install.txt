@@ -1,0 +1,17 @@
+Install Xammp;
+
+Download "composer-setup.exe" from https://getcomposer.org/download/
+
+Install composer showing the path of php.exe from the xammp php folder.
+
+Open git bash/ your terminal 
+
+Type  "composer" to check if its successfully installed
+
+git "clone" this repository in "../xampp/htdocs"
+
+Type "php artisan serve" on your terminal/git bash
+
+Copy the link generated.example: "http://localhost:8000/" and load it on your browser.
+
+
