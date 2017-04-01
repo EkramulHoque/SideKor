@@ -12,7 +12,10 @@ use Illuminate\Http\Request;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
+
 Route::get('/quotes', ['uses' => 'QuoteController@getQuote' , 'middleware' => 'auth.jwt']);
 Route::post('/quote', ['uses' => 'QuoteController@postQuote' , 'middleware' => 'auth.jwt']);
 Route::post('/signup', ['uses' => 'UserController@signup']);
 Route::post('/signin', ['uses' => 'UserController@signin']);
+Route::get('/getUserById/{id}', ['uses' => 'UserController@getUserById' , 'middleware' => 'auth.jwt']);
+Route::post('/updateUserById/{id}', ['uses' => 'UserController@updateUserById' , 'middleware' => 'auth.jwt']);
