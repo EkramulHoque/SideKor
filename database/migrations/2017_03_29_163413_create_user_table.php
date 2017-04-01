@@ -21,6 +21,7 @@ class CreateUserTable extends Migration
             $table->string('password');
             $table->string('provider');
             $table->string('provider_id')->unique();
+            $table->string('role');
             $table->rememberToken();
 
     }

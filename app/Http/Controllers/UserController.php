@@ -14,8 +14,9 @@ use Mockery\Exception;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use JWTAuth;
 
+use \Validator;
 use Illuminate\Foundation\Bus\DispatchesJobs;
-use Illuminate\Contracts\Validation\Validator;
+//use  \Validator;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 
@@ -25,46 +26,77 @@ class UserController extends Controller {
     use DispatchesJobs, ValidatesRequests;
     public function signup( Request $request){
         try {
-             $this->validate($request,
-                ['name' => 'required',
-                    'email' => 'required|email|unique:users',
-                    'password' => 'required'
-                ]
-            );
 
-             if ($request->input('provider') !='') {
-                $this->provider = $request->input('provider');
+            $rules = [
+                'name' => 'required',
+                'email' => 'required|email|unique:users',
+                'password' => 'required'
+            ];
+
+            $customMessages = [
+                'required' => 'The :attribute field can not be blank.',
+                'unique' => 'User exists with that email'
+            ];
+
+
+            $validator = Validator::make($request->all(),$rules,$customMessages);
+            if($validator->fails()){
+                return response()->json($validator->errors()->all(),201);
             }
-            if ($request->input('provider_id') !='') {
-                $this->provider_id = $request->input('provider_id');
+
+            $authUser=$this->findOrCreateUser($request->provider_id);
+            if($authUser){ /// checks if a user exits using social media id
+                return response()->json(['error' => 'User Exists with that Social Media',
+                    'provider_id' => $this->provider_id
+                ],201);
+            }elseif($authUser == null){
+                $string = str_random(15);
+                $user = new User([
+                    'name' => $request->input('name'),
+                    'email' => $request->input('email'),
+                    'password' => bcrypt($request->input('password')),
+                    'provider' => 'Manual',
+                    'provider_id' => $string,
+                    'role' => $request->input('role')
+                ]);
+            }else {
+
+                $user = new User([
+                    'name' => $request->input('name'),
+                    'email' => $request->input('email'),
+                    'password' => bcrypt($request->input('password')),
+                    'provider' => $this->provider,
+                    'provider_id' => $this->provider_id,
+                    'role' => $request->input('role')
+                ]);
             }
-            $authUser=$this->findOrCreateUser($this->provider_id);
-            if($authUser){ /// checks if a user exits
-                return response()->json(['message' => $authUser],201);
-            }
-            $user = new User([
-                'name' => $request->input('name'),
-                'email' => $request->input('email'),
-                'password' => bcrypt($request->input('password')),
-                'provider' => $this->provider,
-                'provider_id' => $this->provider_id,
-            ]);
 
             $user->save();
         }catch (Exception $e){
 
-            return response()->json(['message' => $e],500);
+            return response()->json(['error' => $e],500);
         }
-return response()->json(['message' => 'Successfully Created User'],201);
+return response()->json(['success' => 'Successfully Created User'],201);
 
     }
 
     public function  signin(Request $request){
-        $this-> validate($request , ['name' => 'required' ,
+        $rules =  ['name' => 'required' ,
             'email' => 'required | email',
             'password' => 'required'
+        ];
 
-            ]);
+        $customMessages = [
+            'required' => 'The :attribute field can not be blank.',
+            'unique' => 'User exists with that email'
+        ];
+
+
+        $validator = Validator::make($request->all(),$rules,$customMessages);
+        if($validator->fails()){
+            return response()->json($validator->errors()->all(),201);
+        }
+
         $cred = $request->only('email','password');
         try{
         if(!$token = JWTAuth::attempt($cred)){
@@ -86,8 +118,7 @@ return response()->json(['message' => 'Successfully Created User'],201);
         }
 
     }
-    protected function formatValidationErrors(Validator $validator)
-    {
-        return $validator->errors()->all();
-    }
+
+
+
 }
